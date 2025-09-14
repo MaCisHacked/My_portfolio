@@ -1,4 +1,6 @@
 import { useTexture } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+import { useRef } from 'react';
 import * as THREE from 'three';
 
 export default function Environment() {
@@ -33,8 +35,28 @@ export default function Environment() {
 }
 
 function Tree({ position }: { position: [number, number, number] }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const foliageRef = useRef<THREE.Mesh>(null);
+  
+  // Pre-calculate random values for each tree to avoid using Math.random in render
+  const swayOffset = position[0] * 0.1 + position[2] * 0.15;
+  const swaySpeed = 0.5 + (position[0] + position[2]) * 0.01;
+  const swayAmount = 0.02 + Math.abs(position[0] * 0.001);
+
+  useFrame((state) => {
+    if (!groupRef.current || !foliageRef.current) return;
+
+    // Gentle swaying motion
+    const time = state.clock.elapsedTime;
+    groupRef.current.rotation.z = Math.sin(time * swaySpeed + swayOffset) * swayAmount;
+    
+    // Additional foliage movement
+    foliageRef.current.rotation.y = Math.cos(time * 0.3 + swayOffset) * 0.1;
+    foliageRef.current.position.x = Math.sin(time * 0.4 + swayOffset) * 0.05;
+  });
+
   return (
-    <group position={position}>
+    <group ref={groupRef} position={position}>
       {/* Tree trunk */}
       <mesh castShadow position={[0, 1, 0]}>
         <cylinderGeometry args={[0.2, 0.3, 2]} />
@@ -42,7 +64,7 @@ function Tree({ position }: { position: [number, number, number] }) {
       </mesh>
       
       {/* Tree foliage */}
-      <mesh castShadow position={[0, 2.5, 0]}>
+      <mesh ref={foliageRef} castShadow position={[0, 2.5, 0]}>
         <sphereGeometry args={[1.2]} />
         <meshLambertMaterial color="#32CD32" />
       </mesh>

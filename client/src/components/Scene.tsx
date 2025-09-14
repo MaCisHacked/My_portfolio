@@ -5,6 +5,7 @@ import Vehicle from './Vehicle';
 import Environment from './Environment';
 import InteractiveObjects from './InteractiveObjects';
 import Lighting from './Lighting';
+import { DustParticles, SparkleParticles, FloatingOrbs } from './ParticleSystem';
 
 export default function Scene() {
   const { camera } = useThree();
@@ -34,6 +35,11 @@ export default function Scene() {
       <Environment />
       <Vehicle />
       <InteractiveObjects />
+      
+      {/* Particle effects */}
+      <DustParticles />
+      <SparkleParticles />
+      <FloatingOrbs />
     </>
   );
 }
