@@ -3,11 +3,13 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useKeyboardControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useControls } from '../lib/stores/useControls';
+import { useAudio } from '../lib/stores/useAudio';
 
 export default function Vehicle() {
   const vehicleRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
   const { controls } = useControls();
+  const { playEngineSound, stopEngineSound, initializeAudio } = useAudio();
   
   // Get keyboard controls without causing re-renders
   const [subscribe, getKeys] = useKeyboardControls();
@@ -17,6 +19,7 @@ export default function Vehicle() {
   const position = useRef(new THREE.Vector3(0, 0.5, 0));
   const rotation = useRef(0);
   const targetRotation = useRef(0);
+  const isMoving = useRef(false);
 
   useFrame((state, delta) => {
     if (!vehicleRef.current) return;
@@ -83,6 +86,19 @@ export default function Vehicle() {
     
     camera.position.lerp(idealCameraPosition, delta * 2);
     camera.lookAt(position.current);
+
+    // Handle engine sounds based on movement
+    const isCurrentlyMoving = moveDirection !== 0 || turnDirection !== 0;
+    
+    if (isCurrentlyMoving !== isMoving.current) {
+      isMoving.current = isCurrentlyMoving;
+      
+      if (isCurrentlyMoving) {
+        playEngineSound();
+      } else {
+        stopEngineSound();
+      }
+    }
 
     // Log movement for debugging
     if (moveDirection !== 0 || turnDirection !== 0) {

@@ -5,6 +5,7 @@ import { useIsMobile } from "./hooks/use-is-mobile";
 import Scene from "./components/Scene";
 import PortfolioOverlay from "./components/PortfolioOverlay";
 import MobileControls from "./components/MobileControls";
+import { useAudio } from "./lib/stores/useAudio";
 import "@fontsource/inter";
 
 // WebGL detection utility
@@ -40,6 +41,7 @@ function App() {
   const [webglSupported, setWebglSupported] = useState(true);
   const [canvasError, setCanvasError] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const { initializeAudio, playBackgroundMusic, toggleMute, isMuted } = useAudio();
 
   // Check WebGL support and show the canvas once everything is loaded
   useEffect(() => {
@@ -56,6 +58,18 @@ function App() {
     // Add a small delay to ensure proper initialization
     setTimeout(checkWebGL, 100);
   }, []);
+
+  // Initialize audio system
+  useEffect(() => {
+    initializeAudio();
+  }, [initializeAudio]);
+
+  // Handle user interaction to start background music
+  const handleUserInteraction = () => {
+    if (!isMuted) {
+      playBackgroundMusic();
+    }
+  };
 
   const handleCanvasError = (error: any) => {
     console.error('Canvas creation error:', error);
@@ -132,6 +146,7 @@ function App() {
               console.log('WebGL context created successfully');
             }}
             onError={handleCanvasError}
+            onPointerDown={handleUserInteraction}
           >
             <color attach="background" args={["#B0E7FF"]} />
             
@@ -141,6 +156,31 @@ function App() {
           </Canvas>
           
           <PortfolioOverlay />
+          
+          {/* Audio Control */}
+          <div className="absolute top-4 right-4 z-50">
+            <button
+              onClick={() => {
+                toggleMute();
+                if (isMuted) {
+                  playBackgroundMusic();
+                }
+              }}
+              className="bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition-colors"
+              title={isMuted ? "Enable Sound" : "Mute Sound"}
+            >
+              {isMuted ? (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M11 5L6 9H2v6h4l5 4V5zM22 9l-6 6M16 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              ) : (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93A10 10 0 0 1 21 12a10 10 0 0 1-1.93 7.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M15.54 8.46A5 5 0 0 1 17 12a5 5 0 0 1-1.46 3.54" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
+          </div>
           
           {isMobile && <MobileControls />}
           

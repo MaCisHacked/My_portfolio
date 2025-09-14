@@ -5,6 +5,7 @@ import { useKeyboardControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { usePortfolio } from '../lib/stores/usePortfolio';
 import { useControls } from '../lib/stores/useControls';
+import { useAudio } from '../lib/stores/useAudio';
 
 interface InteractiveObjectProps {
   position: [number, number, number];
@@ -18,8 +19,10 @@ function InteractiveObject({ position, color, section, label, vehiclePosition }:
   const meshRef = useRef<THREE.Mesh>(null);
   const [isNear, setIsNear] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [prevInteract, setPrevInteract] = useState(false);
   const { openSection } = usePortfolio();
   const { controls } = useControls();
+  const { playInteractionSound } = useAudio();
   
   const [subscribe, getKeys] = useKeyboardControls();
 
@@ -34,10 +37,14 @@ function InteractiveObject({ position, color, section, label, vehiclePosition }:
     const keys = getKeys();
     const interact = keys.interact || controls.interact;
     
-    if (isNear && interact && !wasNear) {
+    // Track interaction edge (key press, not hold)
+    if (isNear && interact && !prevInteract) {
       console.log(`Interacting with ${section}`);
+      playInteractionSound();
       openSection(section);
     }
+    
+    setPrevInteract(interact);
 
     // Floating animation
     meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.1;
@@ -55,7 +62,13 @@ function InteractiveObject({ position, color, section, label, vehiclePosition }:
         castShadow
         onPointerEnter={() => setHovered(true)}
         onPointerLeave={() => setHovered(false)}
-        onClick={() => isNear && openSection(section)}
+        onClick={() => {
+          if (isNear) {
+            console.log(`Clicking on ${section}`);
+            playInteractionSound();
+            openSection(section);
+          }
+        }}
       >
         <boxGeometry args={[1.5, 1.5, 1.5]} />
         <meshLambertMaterial 
